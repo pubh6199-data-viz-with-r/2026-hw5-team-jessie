@@ -1,6 +1,6 @@
 ---
 title: "Final Project: [YOUR TITLE HERE]"
-author: "[YOUR NAMES]"
+author: "Salem Yohannes , Megan Liu"
 date: "2026-06-25"
 params:
   number: 5
