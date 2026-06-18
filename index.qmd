@@ -48,8 +48,26 @@ _Describe your data source(s), including where it came from, the key variables, 
 # Load libraries and data
 library(tidyverse)
 
-data <- read_csv("data/my_data.csv")
-glimpse(data)
+# Load EPA Chemical Data Reporting (CDR) Data
+cdr <- X2024_CDR_Manufacture_Import_Information
+glimpse(cdr)
+
+# Check how many rows of data
+nrow(cdr) ## 50116 rows
+
+# Drop CBI facilities
+cdr <- cdr[cdr$`SITE NAICS ACTIVITY 1` != "CBI",]
+
+# Check how many rows of data
+nrow(cdr) ## 43042, so dropped 7074 rows 
+
+# Keep only manufacturing or "both" facilities; drop importing
+cdr <- cdr[cdr$`SITE NAICS ACTIVITY 1` != "Import",]
+
+# Check how many rows of data
+nrow(cdr) ## 29559, so dropped another 13483 rows; in total, 20557 dropped 
+
+#Load additional data below
 ```   
 
 ## Visualizatiob 1: [Title Here]
