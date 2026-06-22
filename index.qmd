@@ -78,7 +78,7 @@ cdr_plastic <- cdr %>%
 #Load additional data below
 ```   
 
-## Visualizatiob 1: [Title Here]
+## Visualizatiob 1: Bivariate Chloropleth Map
 
 _Describe what this plot shows, and why it's important._
 
@@ -86,7 +86,7 @@ _Describe what this plot shows, and why it's important._
 # your code here
 ```
 
-## Visualization 2: [Title Here]
+## Visualization 2: Scatterplot
 
 _Describe what this plot shows, and why it's important._
 
@@ -94,7 +94,7 @@ _Describe what this plot shows, and why it's important._
 # your code here
 ```
 
-## Visualization 3: [Title Here]
+## Visualization 3: Faceted Line Graph
 
 _Describe what this plot shows, and why it's important._
 
@@ -102,7 +102,7 @@ _Describe what this plot shows, and why it's important._
 # your code here
 ```
 
-## OR Shiny app: [Title Here]
+## OR Shiny app: Plastic Chemical Production Facilities and Maternal Health in the US
 
 _If you choose to create a Shiny app, describe the app's purpose and functionality. Save your code inside the shiny-app/ folder, replace the URL below with your app's URL_
 
