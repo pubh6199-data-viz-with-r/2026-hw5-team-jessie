@@ -53,7 +53,7 @@ cdr <- X2024_CDR_Manufacture_Import_Information
 glimpse(cdr)
 
 # Check how many rows of data
-nrow(cdr) ## 50,116 rows
+nrow(cdr) # 50,116 rows
 
 # Drop CBI facilities, importing facilities, and missing values 
 cdr <- cdr[cdr$`SITE NAICS ACTIVITY 1` != "CBI" & 
@@ -61,7 +61,7 @@ cdr <- cdr[cdr$`SITE NAICS ACTIVITY 1` != "CBI" &
              cdr$`SITE NAICS ACTIVITY 1` != "Import", ]
 
 # Check how many rows of data
-nrow(cdr) ## 25,830, so dropped 24,286 rows total
+nrow(cdr) # 25,830, so dropped 24,286 rows total
 
 # Load spreadsheet with specific plastic production chemicals and their CAS #s
 plastic_cas_df <- Plastic_Production_Chemical_CAS
@@ -75,7 +75,8 @@ plastic_cas
 cdr_plastic <- cdr %>% 
   filter(`CHEMICAL ID` %in% plastic_cas) # 610 production facilities
 
-#Load additional data below
+# Upload maternal health data below
+
 ```   
 
 ## Visualizatiob 1: Bivariate Chloropleth Map
@@ -83,7 +84,71 @@ cdr_plastic <- cdr %>%
 _Describe what this plot shows, and why it's important._
 
 ```{r}
-# your code here
+# Prepare chemical facility data
+# Load necessary libraries and datasets
+library(tidyverse)
+library(tmap)
+library(sf)
+library(tigris)
+library(tidycensus)
+library(leaflet)
+
+# Check for missing values in county name column
+sum(is.na(cdr_plastic$`SITE COUNTY / PARISH`)) # 43 missing values
+
+# Use the zipcodeR package which has zip codes and county names, to join county names by zip code to the 43 rows missing county name info
+install.packages("zipcodeR")
+library(zipcodeR)
+
+# Create df with zipcodes
+zipcodeR_df <- zipcodeR::zip_code_db
+
+# Join the county names to the cdr_plastic dataframe
+zipcodeR_df <- zipcodeR_df %>% select(zipcode, county) # Select only relevant columns, so that the full dataframe doesn't get joined to cdr_plastic df
+
+cdr_plastic2 <- cdr_plastic %>% 
+  left_join(zipcodeR_df, by = c("SITE POSTAL CODE" = "zipcode")) %>% 
+  mutate(zipcodeR_county = county)
+
+names(cdr_plastic2) # Check that join worked, and all columns needed were added
+
+# Join didn't work for zip codes that had the additional 4 digits. Update zip code column to only include the 5 first digits
+cdr_plastic <- cdr_plastic %>%  mutate(
+  zip_code = substr(`SITE POSTAL CODE`, 1, 5))
+
+# Re-join
+cdr_plastic2 <- cdr_plastic %>% 
+  left_join(zipcodeR_df, by = c("zip_code" = "zipcode")) %>% 
+  mutate(zipcodeR_county = county)
+
+# Check that join worked and there are no missing county names
+sum(is.na(cdr_plastic$county_name)) # 0 missing county names
+
+# Select for only necessary columns to make df more viewable
+cdr_plastic3 <- cdr_plastic2 %>% 
+  select(`CHEMICAL NAME`, `CHEMICAL ID`, `SITE NAME`, `SITE ADDRESS LINE1`, `SITE CITY`,
+         `SITE COUNTY / PARISH`, `SITE STATE`, `SITE POSTAL CODE`, `SITE NAICS CODE 1`,
+         `SITE NAICS ACTIVITY 1`, zipcodeR_county)
+
+# Now that all county names are included, add the ones from zipcodeR to fill the missing names in the original df
+cdr_plastic4 <- cdr_plastic3 %>% mutate(
+  county_name = coalesce(`SITE COUNTY / PARISH`, zipcodeR_county)) # Looking at the data, there are some wrong entries in the original data which is now under "county_name", so plan on actually using "zipcodeR_county" column for analysis, which has more accurate names.
+
+# Rearrange columns so that it's easier to read
+cdr_plastic5 <- cdr_plastic4 %>%  select(`CHEMICAL NAME`, `CHEMICAL ID`, `SITE NAME`, 
+          `SITE ADDRESS LINE1`, `SITE CITY`, zipcodeR_county, `SITE STATE`, 
+          `SITE POSTAL CODE`, `SITE NAICS CODE 1`, `SITE NAICS ACTIVITY 1`)
+
+# Standardize cases- county names all currently lower case
+cdr_plastic5$zipcodeR_county <- toupper(cdr_plastic5$zipcodeR_county)
+
+toupper(counties_mw$NAME) 
+
+# Rename df
+chemfacilities <- cdr_plastic5
+
+# Prepare spatial data
+
 ```
 
 ## Visualization 2: Scatterplot
