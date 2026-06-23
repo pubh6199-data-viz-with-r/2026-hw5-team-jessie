@@ -75,8 +75,6 @@ plastic_cas
 cdr_plastic <- cdr %>% 
   filter(`CHEMICAL ID` %in% plastic_cas) # 610 production facilities
 
-
-
 -----------
 # Upload maternal health data below
 
@@ -299,7 +297,7 @@ state_maternalhealth_avgs <- State_Maternal_Outcome_Data %>%
          avg_preterm = mean(`Preterm Births Percent`, na.rm = TRUE), 
          avg_births = mean(`Number of Births`, na.rm = TRUE))
 
-# Create new df with just 2023 rates, for scatterplot and join facility counts
+# Create new df with just 2023 rates for all 50 states, for scatterplot; and join facility counts
 mhcf_2023_scatterdf <- state_maternalhealth_avgs %>% 
   left_join(all50_state_facilities, by = c("State" = "state_abb")) %>% 
   filter(Year %in% c(2023), State != "District of Columbia") %>% 
@@ -307,6 +305,10 @@ mhcf_2023_scatterdf <- state_maternalhealth_avgs %>%
   left_join(all50_state_facilities, by = c("State" = "state_abb"))
 
 sum(mhcf_2023_scatterdf$count) # Check that all facilities accounted for- true (all 607 present)
+
+# Create df option with only the 38 states that have facliities, in case we choose this route for visualization
+mhcf_2023_scatterdf_only38 <- mhcf_2023_scatterdf %>% 
+  filter(count != 0)
 
 # Create scatterplot
 mhcf_scatterplot <- mhcf_2023_scatterdf %>% # mh = maternal health, cf = chemical facilities
@@ -329,7 +331,6 @@ _Describe what this plot shows, and why it's important._
 
 ```{r}
 # your code here
-
 mhcf_2023_scatterdf # Use this for plotting
 ```
 
