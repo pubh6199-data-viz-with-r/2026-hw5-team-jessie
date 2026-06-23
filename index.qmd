@@ -93,6 +93,8 @@ library(tigris)
 library(tidycensus)
 library(leaflet)
 library(dplyr)
+library(shiny)
+library(ggplot2)
 
 options(tigris_use_cache = TRUE)
 
@@ -172,12 +174,15 @@ county_facilities_sf <- counties_sf %>%
 county_facilities_sf$count[is.na(county_facilities_sf$count)] <- 0 
 sum(county_facilities_sf$count) # 607 total facilities, since the 3 in Puerto Rico were dropped
    
-# Create univariate chloropleth to visualize number of chemical facilities by county
+# Create univariate chloropleth just to visualize number of chemical facilities by county
 tm_shape(county_facilities_sf) + # Read in county shapefile
   tm_polygons("count", palette = "brewer.reds", title = "Number of Chemical Facilities per County") +
   tm_shape(states_sf) + # Read in state shapefile
   tm_borders(col = "black", lwd = 2)
- 
+
+# Create interactive leaflet map
+
+
  
 ```
 
