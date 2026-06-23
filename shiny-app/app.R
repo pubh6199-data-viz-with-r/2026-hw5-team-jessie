@@ -1,5 +1,3 @@
-# placeholder for shiny app
-
 library(shiny)
 library(bslib)
 library(plotly)
