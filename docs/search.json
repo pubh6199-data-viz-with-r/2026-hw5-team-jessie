@@ -2,77 +2,77 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "",
     "text": "Briefly introduce your topic and research question."
   },
   {
     "objectID": "index.html#introduction",
     "href": "index.html#introduction",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "",
     "text": "Briefly introduce your topic and research question."
   },
   {
     "objectID": "index.html#data",
     "href": "index.html#data",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "Data",
-    "text": "Data\nDescribe your data source(s), including where it came from, the key variables, and any pre-processing steps.\n\n\nCode\n# Load libraries and data\nlibrary(tidyverse)\n\ndata &lt;- read_csv(\"data/my_data.csv\")\nglimpse(data)"
+    "text": "Data\nDescribe your data source(s), including where it came from, the key variables, and any pre-processing steps.\n\n\nCode\n# Load libraries and data\nlibrary(tidyverse)\n\n# Load EPA Chemical Data Reporting (CDR) Data\ncdr &lt;- X2024_CDR_Manufacture_Import_Information\nglimpse(cdr)\n\n# Check how many rows of data\nnrow(cdr) ## 50116 rows\n\n# Drop CBI facilities\ncdr &lt;- cdr[cdr$`SITE NAICS ACTIVITY 1` != \"CBI\",]\n\n# Check how many rows of data\nnrow(cdr) ## 43042, so dropped 7074 rows \n\n# Keep only manufacturing or \"both\" facilities; drop importing\ncdr &lt;- cdr[cdr$`SITE NAICS ACTIVITY 1` != \"Import\",]\n\n# Check how many rows of data\nnrow(cdr) ## 29559, so dropped another 13483 rows; in total, 20557 dropped \n\n#Load additional data below"
   },
   {
     "objectID": "index.html#visualizatiob-1-title-here",
     "href": "index.html#visualizatiob-1-title-here",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "Visualizatiob 1: [Title Here]",
     "text": "Visualizatiob 1: [Title Here]\nDescribe what this plot shows, and why it’s important.\n\n\nCode\n# your code here"
   },
   {
     "objectID": "index.html#visualization-2-title-here",
     "href": "index.html#visualization-2-title-here",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "Visualization 2: [Title Here]",
     "text": "Visualization 2: [Title Here]\nDescribe what this plot shows, and why it’s important.\n\n\nCode\n# your code here"
   },
   {
     "objectID": "index.html#visualization-3-title-here",
     "href": "index.html#visualization-3-title-here",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "Visualization 3: [Title Here]",
     "text": "Visualization 3: [Title Here]\nDescribe what this plot shows, and why it’s important.\n\n\nCode\n# your code here"
   },
   {
     "objectID": "index.html#or-shiny-app-title-here",
     "href": "index.html#or-shiny-app-title-here",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "OR Shiny app: [Title Here]",
     "text": "OR Shiny app: [Title Here]\nIf you choose to create a Shiny app, describe the app’s purpose and functionality. Save your code inside the shiny-app/ folder, replace the URL below with your app’s URL\nClick here to open the interactive Shiny app"
   },
   {
     "objectID": "index.html#interpretation",
     "href": "index.html#interpretation",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "Interpretation",
     "text": "Interpretation\nSummarize your key findings. What do your visualizations reveal?"
   },
   {
     "objectID": "index.html#limitations",
     "href": "index.html#limitations",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "Limitations",
     "text": "Limitations\nDiscuss any data quality or design limitations."
   },
   {
     "objectID": "index.html#conclusion",
     "href": "index.html#conclusion",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "Conclusion",
     "text": "Conclusion\nWrap up your project with a takeaway message or next steps."
   },
   {
     "objectID": "index.html#references",
     "href": "index.html#references",
-    "title": "Final Project: [YOUR TITLE HERE]",
+    "title": "Final Project: Plastic Production Chemicals and Maternal Health Outcomes",
     "section": "References",
     "text": "References\nInclude any references to data sources, packages, or literature you used. If your visualization design is inspired by someone else’s work, cite those too.\n\nReference 1\nReference 2\nReference 3"
   }

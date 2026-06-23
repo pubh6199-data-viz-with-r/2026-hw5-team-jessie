@@ -1,5 +1,5 @@
 ---
-title: "Final Project: [YOUR TITLE HERE]"
+title: "Final Project: Plastic Production Chemicals and Maternal Health Outcomes"
 author: "Salem Yohannes , Megan Liu"
 date: "2026-06-25"
 params:
@@ -48,11 +48,173 @@ _Describe your data source(s), including where it came from, the key variables, 
 # Load libraries and data
 library(tidyverse)
 
-data <- read_csv("data/my_data.csv")
-glimpse(data)
+# Load EPA Chemical Data Reporting (CDR) Data
+cdr <- X2024_CDR_Manufacture_Import_Information
+glimpse(cdr)
+
+# Check how many rows of data
+nrow(cdr) # 50,116 rows
+
+# Drop CBI facilities, importing facilities, and missing values 
+cdr <- cdr[cdr$`SITE NAICS ACTIVITY 1` != "CBI" & 
+             !is.na(cdr$`SITE NAICS ACTIVITY 1`) &
+             cdr$`SITE NAICS ACTIVITY 1` != "Import", ]
+
+# Check how many rows of data
+nrow(cdr) # 25,830, so dropped 24,286 rows total
+
+# Load spreadsheet with specific plastic production chemicals and their CAS #s
+plastic_cas_df <- Plastic_Production_Chemical_CAS
+glimpse(plastic_cas_df)
+  
+# Create vector of all the CAS #s for easier filtering
+plastic_cas <- plastic_cas_df$`CAS #` 
+plastic_cas
+  
+# Filter cdr df down to just the plastic production chemicals identified
+cdr_plastic <- cdr %>% 
+  filter(`CHEMICAL ID` %in% plastic_cas) # 610 production facilities
+
+# Upload maternal health data below
+
 ```   
 
-## Visualizatiob 1: [Title Here]
+## Visualization 1: Bivariate Chloropleth Map
+
+_Describe what this plot shows, and why it's important._
+
+```{r}
+# Prepare chemical facility data
+# Load necessary libraries and datasets
+library(tidyverse)
+library(tmap)
+library(sf)
+library(tigris)
+library(tidycensus)
+library(leaflet)
+library(dplyr)
+
+options(tigris_use_cache = TRUE)
+
+# Check for missing values in county name column
+sum(is.na(cdr_plastic$`SITE COUNTY / PARISH`)) # 43 missing values
+
+# Use the zipcodeR package which has zip codes and county names, to join county names by zip code to the 43 rows missing county name info
+install.packages("zipcodeR")
+library(zipcodeR)
+
+# Create df with zipcodes
+zipcodeR_df <- zipcodeR::zip_code_db
+
+# Join the county names to the cdr_plastic dataframe
+zipcodeR_df <- zipcodeR_df %>% select(zipcode, county) # Select only relevant columns, so that the full dataframe doesn't get joined to cdr_plastic df
+
+cdr_plastic2 <- cdr_plastic %>% 
+  left_join(zipcodeR_df, by = c("SITE POSTAL CODE" = "zipcode")) %>% 
+  mutate(zipcodeR_county = county)
+
+names(cdr_plastic2) # Check that join worked, and all columns needed were added
+
+# Join didn't work for zip codes that had the additional 4 digits. Update zip code column to only include the 5 first digits
+cdr_plastic <- cdr_plastic %>%  mutate(
+  zip_code = substr(`SITE POSTAL CODE`, 1, 5))
+
+# Re-join
+cdr_plastic2 <- cdr_plastic %>% 
+  left_join(zipcodeR_df, by = c("zip_code" = "zipcode")) %>% 
+  mutate(zipcodeR_county = county)
+
+# Check that join worked and there are no missing county names
+sum(is.na(cdr_plastic$county_name)) # 0 missing county names
+
+# Select for only necessary columns to make df more viewable
+cdr_plastic3 <- cdr_plastic2 %>% 
+  select(`CHEMICAL NAME`, `CHEMICAL ID`, `SITE NAME`, `SITE ADDRESS LINE1`, `SITE CITY`,
+         `SITE COUNTY / PARISH`, `SITE STATE`, `SITE POSTAL CODE`, `SITE NAICS CODE 1`,
+         `SITE NAICS ACTIVITY 1`, zipcodeR_county, zip_code)
+
+# Now that all county names are included, add the ones from zipcodeR to fill the missing names in the original df
+cdr_plastic4 <- cdr_plastic3 %>% mutate(
+  county_name = coalesce(`SITE COUNTY / PARISH`, zipcodeR_county)) # Looking at the data, there are some wrong entries in the original data which is now under "county_name", so plan on actually using "zipcodeR_county" column for analysis, which has more accurate names.
+
+# Rearrange columns so that it's easier to read
+cdr_plastic5 <- cdr_plastic4 %>%  select(`CHEMICAL NAME`, `CHEMICAL ID`, `SITE NAME`, 
+          `SITE ADDRESS LINE1`, `SITE CITY`, zipcodeR_county, `SITE STATE`, 
+          zip_code, `SITE NAICS CODE 1`, `SITE NAICS ACTIVITY 1`)
+
+# Standardize cases- county names all currently lower case
+cdr_plastic5$zipcodeR_county <- toupper(cdr_plastic5$zipcodeR_county)
+
+# Rename df
+chemfacilities <- cdr_plastic5
+
+# Download county shapefiles
+counties_sf <- tigris::counties(cb = TRUE, year = 2023) # Chose to download 2023 since this is the most recent year of data in our CDR and maternal health data
+
+# Standardize cases in shapefile df before merging
+counties_sf$NAMELSAD <- toupper(counties_sf$NAMELSAD)
+  
+# Download state shapefiles so that state borders appear on map
+states_sf <- tigris::states(cb = TRUE, year = 2023)
+
+# Group by county and summarize number of facilities by county 
+chemfacilities_counties <- chemfacilities %>% 
+  group_by(zipcodeR_county, `SITE STATE`) %>% 
+  summarise(count = n())
+
+sum(chemfacilities_counties$count) # Check that all 610 facilities are included; true
+
+# Join new count column to shapefile df (counties_sf) on county and state name
+county_facilities_sf <- counties_sf %>% 
+  left_join(chemfacilities_counties, by = c("NAMELSAD" = "zipcodeR_county", "STUSPS" = "SITE STATE"))
+
+# Replace NA values in count column with 0
+county_facilities_sf$count[is.na(county_facilities_sf$count)] <- 0 
+sum(county_facilities_sf$count) # 607 total facilities, since the 3 in Puerto Rico were dropped
+   
+# Create univariate chloropleth to visualize number of chemical facilities by county
+tm_shape(county_facilities_sf) + # Read in county shapefile
+  tm_polygons("count", palette = "brewer.reds", title = "Number of Chemical Facilities per County") +
+  tm_shape(states_sf) + # Read in state shapefile
+  tm_borders(col = "black", lwd = 2)
+ 
+ 
+```
+
+## Visualization 2: Scatterplot
+
+_Describe what this plot shows, and why it's important._
+
+```{r}
+# Aggregate number of chemical production facilities by state
+state_facilities <- chemfacilities %>% 
+  group_by(`SITE STATE`) %>% 
+  summarise(count = n()) # 39 states have chemical facilities based on the chemicals included
+
+# Check that the group_by() included all 610 facilities
+sum(state_facilities$count) # = 610
+
+# Create df with all 50 states in case we want to include for analysis
+length(state.abb) # Use built in R vector, state.abb which has all 50 states (the CDR data had NA values and typos, otherwise would have extracted from there)
+
+all_50 <- data.frame(state_abb = state.abb)
+
+all50_state_facilities <- all_50 %>% 
+  left_join(state_facilities, by = c(state_abb = "SITE STATE"))
+
+all50_state_facilities$count[is.na(all50_state_facilities$count)] <- 0 # Replace NA values with 0 in case we want to explore this in the scatterplot
+
+sum(all50_state_facilities$count) # = 607; 3 facilities now missing, because 3 facilities were in Puerto Rico which we will exclude from our analysis (?)
+
+# Create scatterplot
+# mhcf_scatter <- [insert dataframe with the chemical facility counts by state and maternal health rates] %>% ggplot(aes(x = [insert chemical facility count column], y = [insert maternal health rate column(s)])) + geom_point(alpha = 0.5) + labs(title = "Number of Chemical Facilities and Maternal Health Outcomes", x = "Number of Chemical Facilities per State", y = "Maternal Health Outcome) + theme_minimal()
+# mh = maternal health, cf = chemical facilities
+
+# Notes: for Shiny, we can alter title label and y axis label to reflect which outcome is selected for
+
+```
+
+## Visualization 3: Faceted Line Graph
 
 _Describe what this plot shows, and why it's important._
 
@@ -60,23 +222,7 @@ _Describe what this plot shows, and why it's important._
 # your code here
 ```
 
-## Visualization 2: [Title Here]
-
-_Describe what this plot shows, and why it's important._
-
-```{r}
-# your code here
-```
-
-## Visualization 3: [Title Here]
-
-_Describe what this plot shows, and why it's important._
-
-```{r}
-# your code here
-```
-
-## OR Shiny app: [Title Here]
+## OR Shiny app: Plastic Chemical Production Facilities and Maternal Health in the US
 
 _If you choose to create a Shiny app, describe the app's purpose and functionality. Save your code inside the shiny-app/ folder, replace the URL below with your app's URL_
 
