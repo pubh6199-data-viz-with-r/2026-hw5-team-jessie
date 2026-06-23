@@ -79,7 +79,7 @@ cdr_plastic <- cdr %>%
 
 ```   
 
-## Visualizatiob 1: Bivariate Chloropleth Map
+## Visualization 1: Bivariate Chloropleth Map
 
 _Describe what this plot shows, and why it's important._
 
@@ -92,6 +92,9 @@ library(sf)
 library(tigris)
 library(tidycensus)
 library(leaflet)
+library(dplyr)
+
+options(tigris_use_cache = TRUE)
 
 # Check for missing values in county name column
 sum(is.na(cdr_plastic$`SITE COUNTY / PARISH`)) # 43 missing values
@@ -128,7 +131,7 @@ sum(is.na(cdr_plastic$county_name)) # 0 missing county names
 cdr_plastic3 <- cdr_plastic2 %>% 
   select(`CHEMICAL NAME`, `CHEMICAL ID`, `SITE NAME`, `SITE ADDRESS LINE1`, `SITE CITY`,
          `SITE COUNTY / PARISH`, `SITE STATE`, `SITE POSTAL CODE`, `SITE NAICS CODE 1`,
-         `SITE NAICS ACTIVITY 1`, zipcodeR_county)
+         `SITE NAICS ACTIVITY 1`, zipcodeR_county, zip_code)
 
 # Now that all county names are included, add the ones from zipcodeR to fill the missing names in the original df
 cdr_plastic4 <- cdr_plastic3 %>% mutate(
@@ -137,18 +140,45 @@ cdr_plastic4 <- cdr_plastic3 %>% mutate(
 # Rearrange columns so that it's easier to read
 cdr_plastic5 <- cdr_plastic4 %>%  select(`CHEMICAL NAME`, `CHEMICAL ID`, `SITE NAME`, 
           `SITE ADDRESS LINE1`, `SITE CITY`, zipcodeR_county, `SITE STATE`, 
-          `SITE POSTAL CODE`, `SITE NAICS CODE 1`, `SITE NAICS ACTIVITY 1`)
+          zip_code, `SITE NAICS CODE 1`, `SITE NAICS ACTIVITY 1`)
 
 # Standardize cases- county names all currently lower case
 cdr_plastic5$zipcodeR_county <- toupper(cdr_plastic5$zipcodeR_county)
 
-toupper(counties_mw$NAME) 
-
 # Rename df
 chemfacilities <- cdr_plastic5
 
-# Prepare spatial data
+# Download county shapefiles
+counties_sf <- tigris::counties(cb = TRUE, year = 2023) # Chose to download 2023 since this is the most recent year of data in our CDR and maternal health data
 
+# Standardize cases in shapefile df before merging
+counties_sf$NAMELSAD <- toupper(counties_sf$NAMELSAD)
+  
+# Download state shapefiles so that state borders appear on map
+states_sf <- tigris::states(cb = TRUE, year = 2023)
+
+# Group by county and summarize number of facilities by county 
+chemfacilities_counties <- chemfacilities %>% 
+  group_by(zipcodeR_county, `SITE STATE`) %>% 
+  summarise(count = n())
+
+sum(chemfacilities_counties$count) # Check that all 610 facilities are included; true
+
+# Join new count column to shapefile df (counties_sf) on county and state name
+county_facilities_sf <- counties_sf %>% 
+  left_join(chemfacilities_counties, by = c("NAMELSAD" = "zipcodeR_county", "STUSPS" = "SITE STATE"))
+
+# Replace NA values in count column with 0
+county_facilities_sf$count[is.na(county_facilities_sf$count)] <- 0 
+sum(county_facilities_sf$count) # 607 total facilities, since the 3 in Puerto Rico were dropped
+   
+# Create univariate chloropleth to visualize number of chemical facilities by county
+tm_shape(county_facilities_sf) + # Read in county shapefile
+  tm_polygons("count", palette = "brewer.reds", title = "Number of Chemical Facilities per County") +
+  tm_shape(states_sf) + # Read in state shapefile
+  tm_borders(col = "black", lwd = 2)
+ 
+ 
 ```
 
 ## Visualization 2: Scatterplot
@@ -156,7 +186,32 @@ chemfacilities <- cdr_plastic5
 _Describe what this plot shows, and why it's important._
 
 ```{r}
-# your code here
+# Aggregate number of chemical production facilities by state
+state_facilities <- chemfacilities %>% 
+  group_by(`SITE STATE`) %>% 
+  summarise(count = n()) # 39 states have chemical facilities based on the chemicals included
+
+# Check that the group_by() included all 610 facilities
+sum(state_facilities$count) # = 610
+
+# Create df with all 50 states in case we want to include for analysis
+length(state.abb) # Use built in R vector, state.abb which has all 50 states (the CDR data had NA values and typos, otherwise would have extracted from there)
+
+all_50 <- data.frame(state_abb = state.abb)
+
+all50_state_facilities <- all_50 %>% 
+  left_join(state_facilities, by = c(state_abb = "SITE STATE"))
+
+all50_state_facilities$count[is.na(all50_state_facilities$count)] <- 0 # Replace NA values with 0 in case we want to explore this in the scatterplot
+
+sum(all50_state_facilities$count) # = 607; 3 facilities now missing, because 3 facilities were in Puerto Rico which we will exclude from our analysis (?)
+
+# Create scatterplot
+# mhcf_scatter <- [insert dataframe with the chemical facility counts by state and maternal health rates] %>% ggplot(aes(x = [insert chemical facility count column], y = [insert maternal health rate column(s)])) + geom_point(alpha = 0.5) + labs(title = "Number of Chemical Facilities and Maternal Health Outcomes", x = "Number of Chemical Facilities per State", y = "Maternal Health Outcome) + theme_minimal()
+# mh = maternal health, cf = chemical facilities
+
+# Notes: for Shiny, we can alter title label and y axis label to reflect which outcome is selected for
+
 ```
 
 ## Visualization 3: Faceted Line Graph
