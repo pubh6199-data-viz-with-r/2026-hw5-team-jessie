@@ -19,8 +19,8 @@ ui <- page_sidebar(
   # Create dropdown bar at top:
   
   selectInput("mh_outcome", "Choose maternal health outcome", 
-              choices = c("Cesarean Deliveries", "Low Birth Rate", 
-                          "Fertility Rate", "Preterm Births", "Number of Births")),
+              choices = c("Cesarean Deliveries", "Low Birth Weight", 
+                          "Fertility Rate", "Preterm Births")),
   
   # Create two sections in one row for faceted line graph and scatterplot:
   
@@ -43,14 +43,25 @@ server <- function(input, output, session) {
     
     outcome_col <- switch(input$mh_outcome, # Change the user's dropdown selection into the name of a column in dataframe
                           "Cesarean Deliveries" = "avg_cesarean",
-                          "Low Birth Rate" = "avg_lbw", 
+                          "Low Birth Weight" = "avg_lbw", 
                           "Fertility Rate" = "avg_fertility", 
-                          "Preterm Births" = "avg_preterm",
-                          "Number of Births" = "avg_births")
+                          "Preterm Births" = "avg_preterm")
     
-    mhcf_2023_scatterdf_only38 %>% mutate(selected_value = .data[[outcome_col]]) # update the df here depending on if want to visualize all 50 or just the 38
+    mhcf_2023_scatterdf %>% mutate(selected_value = .data[[outcome_col]]) # update the df here depending on if want to visualize all 50 or just the 38
     
   })
+  
+  outcome_label <- reactive({switch(input$mh_outcome,
+                          "Cesarean Deliveries" = "Cesarean Delivery Rate (%)", 
+                          "Low Birth Weight" = "Low Birth Weight Rate (%)",
+                          "Fertility Rate" = "Fertility Rate (births per 1,000 women)", 
+                          "Preterm Births" = "Preterm Birth Rate (%)")})
+  
+  outcome_tooltip <- reactive({switch(input$mh_outcome,
+                          "Cesarean Deliveries" = "Rate (%)", 
+                          "Low Birth Weight" = "Rate (%)",
+                          "Fertility Rate" = "Live births per 1,000 women", 
+                          "Preterm Births" = "Rate (%)")})
   
   # Create reactive scatterplot:
   
@@ -60,17 +71,18 @@ server <- function(input, output, session) {
       
       filtered_data(), 
       
-      aes(x = count, y = selected_value, text = paste("State:", State, 
-                                          "<br>Chemical Facilities:", count,
-                                          "<br>Value:", round(selected_value, 2)))) +
+      aes(x = count, y = selected_value, text = paste("State:", state_name, 
+                                          "<br>Chemical facilities:", count,
+                                          paste0("<br>", outcome_tooltip(),":"), 
+                                          round(selected_value, 2)))) +
     
     geom_point(size = 3, alpha = 0.5, color = "steelblue") + 
     
- #   scale_x_log10() + # data is skewed; try logging
+    scale_x_log10() + # data is skewed; try logging
     
     labs(title = paste("Number of Chemical Facilities and", input$mh_outcome), 
            x = "Number of Chemical Facilities per State", 
-           y = input$mh_outcome) +
+           y = outcome_label()) +
       
     theme_minimal() 
     
@@ -78,9 +90,8 @@ server <- function(input, output, session) {
      
   })
   
-  
-  
 }
+
 
 
 shinyApp(ui, server)
