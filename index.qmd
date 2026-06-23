@@ -251,7 +251,7 @@ _Describe what this plot shows, and why it's important._
 ```{r}
 # your code here
 
-state_maternalhealth_avgs # Use this for plotting
+mhcf_2023_scatterdf # Use this for plotting
 ```
 
 ## OR Shiny app: Plastic Chemical Production Facilities and Maternal Health in the US
