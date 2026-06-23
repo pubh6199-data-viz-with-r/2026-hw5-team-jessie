@@ -75,8 +75,6 @@ plastic_cas
 cdr_plastic <- cdr %>% 
   filter(`CHEMICAL ID` %in% plastic_cas) # 610 production facilities
 
-
-
 -----------
 # Upload maternal health data below
 
