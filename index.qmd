@@ -75,11 +75,14 @@ plastic_cas
 cdr_plastic <- cdr %>% 
   filter(`CHEMICAL ID` %in% plastic_cas) # 610 production facilities
 
+
 -----------
 # Upload maternal health data below
 
 # Load libraries and data
+install.packages("dplyr")
 library(dplyr)
+library(readxl)
 
 # Load LBW data by county from the National County Health Rankings Database 
 lbw_county <- LBW_County_Data
@@ -92,6 +95,22 @@ glimpse(fertility_cesarean_county)
 # Load preterm birth data by county from the CDC Wonder Natality Database 
 preterm_county <- Preterm_Birth_County_Data
 glimpse(preterm_county)
+
+#Load state data from CDC Stats of the State Data with maternal outcome data for 2005, 2014-2024
+State_Data_2014_2024 <- read_excel("data/State Maternal Data 2005, 2014-2024.xlsx")
+view(State_Data_2014_2024)
+
+# Remove 2005 from state maternal outcome data to only have 2014-2024
+# Add full state names as column
+# Make year numeric 
+state_data_2014_2024 <- State_Data_2014_2024 %>%
+  filter(Year != 2005) %>%
+  mutate(
+    State_Name = state.name[match(State, state.abb)],
+    Year = as.numeric(Year)
+  ) %>%
+  select(State_Name, State, Year, everything())
+view(state_data_2014_2024)
 
 # Keep only preterm birth data, which is birth before 37 weeks of gestational age
 preterm_county <- Preterm_Birth_County_Data %>%
@@ -118,7 +137,8 @@ fertility_cesarean_county <- fertility_cesarean_county %>%
   mutate(Year = as.numeric(Year),
     `Total Number of Births` = as.numeric(`Total Number of Births`))
 
-# Create a new column with the summarized preterm births and calculate the total number of preterm births and the preterm birth rate
+# Create a new column with the summarized preterm births 
+# Calculate the total number of preterm births and the preterm birth rate
 preterm_county <- preterm_county %>%
   left_join(
     fertility_cesarean_county %>% select(State, County, Year, `Total Number of Births`),
@@ -139,11 +159,14 @@ view(fertility_cesarean_county)
 dim(preterm_county)
 dim(fertility_cesarean_county)
 dim(lbw_county)
+dim(state_data_2014_2024)
 glimpse(preterm_county)
 glimpse(fertility_cesarean_county)
 glimpse(lbw_county)
+glimpse(state_data_2014_2024)
 
-# Make characters numeric, and then change county name to be consistent with the chemical data
+# Make characters numeric
+# Change county name to be consistent with the chemical data
 fertility_cesarean_county <- fertility_cesarean_county %>%
   mutate(
     `Female Population` = as.numeric(`Female Population`),
@@ -154,6 +177,7 @@ preterm_county <- preterm_county %>%
 fertility_cesarean_county <- fertility_cesarean_county %>%
   mutate(
     County = sub(",.*", "", County))
+
 ```   
 
 ## Visualization 1: Bivariate Chloropleth Map
@@ -332,6 +356,14 @@ _Describe what this plot shows, and why it's important._
 ```{r}
 # your code here
 mhcf_2023_scatterdf # Use this for plotting
+
+
+
+-------
+# your code below 
+state_data_2014_2024 # Use this for plotting
+  
+  
 ```
 
 ## OR Shiny app: Plastic Chemical Production Facilities and Maternal Health in the US
