@@ -281,6 +281,39 @@ tm_shape(county_facilities_sf) + # Read in county shapefile
   tm_shape(states_sf) + # Read in state shapefile
   tm_borders(col = "black", lwd = 2)
 
+# Combine county maternal health outcomes with the shapefile df with facility counts
+
+lbwcounty_forjoin <- lbw_county %>%  # Prepare the lbw_county df for join
+  filter(Year == 2023) %>% 
+  mutate(county_name = toupper(`County Name`)) %>% 
+  select('State Abbreviation', county_name, 'Year', 'Low birthweight raw value')
+
+pretermcounty_forjoin <- preterm_county %>% # Prepare the preterm_county df for join
+  mutate(county_name = toupper(County)) %>% 
+  filter(Year == 2023) %>% 
+  select(State, county_name, preterm_birth_rate) 
+
+fertility_cesarean_county_forjoin <- fertility_cesarean_county %>% 
+  mutate(countyname = toupper(County)) %>% 
+  filter(Year == 2023) %>% 
+  select(State, countyname, `Fertility Rate`, `Cesarean Delivery Percent`)
+
+# Join maternal health outcomes by state abbreviation and county names
+county_facility_maternal_sf <- county_facilities_sf %>% 
+  left_join(lbwcounty_forjoin, by = c("STUSPS" = "State Abbreviation", "NAMELSAD" = "county_name")) %>% 
+  left_join(pretermcounty_forjoin, by = c("STATE_NAME" = "State", "NAMELSAD" = "county_name")) %>% 
+  left_join(fertility_cesarean_county_forjoin, by = c("STATE_NAME" = "State", "NAMELSAD" = "countyname"))
+
+sum(is.na(county_facility_maternal_sf$`Low birthweight raw value`)) # 123 counties with no lbw data
+sum(is.na(county_facility_maternal_sf$preterm_birth_rate)) # 2558 counties with no preterm birth data
+sum(is.na(county_facility_maternal_sf$`Fertility Rate`)) # 2558 counties with no fertility rate data
+sum(is.na(county_facility_maternal_sf$`Cesarean Delivery Percent`)) # 2558 counties with no c-section rate data
+
+# Export county_facility_maternal_sf into Excel, so can upload to Google as a public sheet for Shiny Assistant to reference to provide bivariate chloropleth map code
+install.packages("writexl")
+library(writexl)
+write_xlsx(county_facility_maternal_sf, "county_facility_maternal_sf.xlsx")
+
 # Create interactive leaflet map
 
 
@@ -325,12 +358,19 @@ state_maternalhealth_avgs <- State_Maternal_Outcome_Data %>%
 mhcf_2023_scatterdf <- state_maternalhealth_avgs %>% 
   left_join(all50_state_facilities, by = c("State" = "state_abb")) %>% 
   filter(Year %in% c(2023), State != "District of Columbia") %>% 
-  select(avg_cesarean, avg_lbw, avg_fertility, avg_preterm, avg_births) %>% 
-  left_join(all50_state_facilities, by = c("State" = "state_abb"))
-
+  select(avg_cesarean, avg_lbw, avg_fertility, avg_preterm, avg_births, count) 
+   
 sum(mhcf_2023_scatterdf$count) # Check that all facilities accounted for- true (all 607 present)
 
-# Create df option with only the 38 states that have facliities, in case we choose this route for visualization
+# Add column with state names for tooltip display
+statenamesandabbvs <- data.frame(state_name = state.name, state_abb = state.abb)
+
+# Join back to mhcf_2023_scatterdf
+mhcf_2023_scatterdf <- mhcf_2023_scatterdf %>%  
+  left_join(statenamesandabbvs, by = c("State" = "state_abb"))
+
+# Create df option with only the 38 states that have facilities, in case we choose this route for visualization
+## Update: we will not use this dataframe, and will include all 50 states, but leaving here in case
 mhcf_2023_scatterdf_only38 <- mhcf_2023_scatterdf %>% 
   filter(count != 0)
 
