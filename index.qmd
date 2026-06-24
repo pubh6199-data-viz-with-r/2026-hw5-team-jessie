@@ -402,7 +402,8 @@ mhcf_2023_scatterdf # Use this for plotting
 -------
 # your code below 
 state_data_2014_2024 # Use this for plotting
-  
+ view(state_data_2014_2024)
+ view(all50_state_facilities)
   
 ```
 
