@@ -290,6 +290,30 @@ install.packages("writexl")
 library(writexl)
 write_xlsx(county_facility_maternal_sf, "county_facility_maternal_sf.xlsx")
 
+
+# Create new df with facility count by state, in case it's better visualization for map
+chemfacilities_states <- chemfacilities %>% 
+  group_by(`SITE STATE`) %>% 
+  summarise(count = n())
+
+# Join to state shapefile df
+state_facilities_sf <- states_sf %>% 
+  left_join(chemfacilities_states, by = c("STUSPS" = "SITE STATE"))
+
+# Replace NA values in count column with 0
+state_facilities_sf$count[is.na(state_facilities_sf$count)] <- 0 
+sum(state_facilities_sf$count) # 610 states
+
+# Drop territories
+state_facilities_sf <- state_facilities_sf %>% 
+  filter(!STUSPS %in% c("PR", "MP", "GU", "VI", "AS", "DC"))
+
+# Join maternal health outcomes by state abbreviation 
+state_facility_maternal_sf <- state_facilities_sf %>% 
+  left_join(state_maternalhealth_avgs, by = c("STUSPS" = "State"))
+ 
+hist(chemfacilities_states$count, breaks = 50)
+
 # Create interactive leaflet map
 
 
