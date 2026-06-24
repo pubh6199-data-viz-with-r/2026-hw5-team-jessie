@@ -1,9 +1,10 @@
-# placeholder for shiny app
-
 library(shiny)
 library(bslib)
 library(plotly)
 library(dplyr)
+library(sf)
+library(leaflet)
+library(classInt)
 
 ui <- page_sidebar(
   
@@ -24,19 +25,30 @@ ui <- page_sidebar(
   
   # Create two sections in one row for faceted line graph and scatterplot:
   
-  layout_columns(col_widths = c(6, 6), plotOutput("linegraph"), plotlyOutput("scatterplot")),
-  
+  layout_columns(col_widths = c(6, 6), 
+                 
+    card(
+      card_header("Maternal Health by State Comparison"),
+      selectizeInput("selected_states", "Select up to 5 states:", choices = state.abb, 
+      multiple = TRUE, options = list(maxItems = 5)),
+                      
+    plotOutput("linegraph")),
+                 
+    card(plotlyOutput("scatterplot"))),
+            
   # Designate section below the two plots for the map:
   
   layout_columns(col_widths = 12, leafletOutput("map", height = 600))
-  
   
   )
   
 
 server <- function(input, output, session) {
   
-  # Create reactive scatterplot based on dropdown selection:
+   # Create reactive line graph based on dropdown selection:
+  
+  
+   # Create reactive scatterplot based on dropdown selection:
   
   filtered_data <- reactive({ # Create reactive data frame
     req(input$mh_outcome)
@@ -90,8 +102,69 @@ server <- function(input, output, session) {
      
   })
   
-}
+  # Create reactive bivariate chloropleth map based on dropdown selection:
+  
+  map_df <- reactive({
+    
+    req(input$mh_outcome)
+    
+    county_facility_maternal_sf %>% 
+      mutate(outcome_value = switch(input$mh_outcome,
+                                    "Cesarean Deliveries" = `Cesarean Delivery Percent` , 
+                                    "Low Birth Weight" = `Low birthweight raw value`,
+                                    "Fertility Rate" = `Fertility Rate`, 
+                                    "Preterm Births" = preterm_birth_rate))
+  })
+  
+  ## Classify into 3x3 bivariate bins
+  map_df_bivariate <- reactive({
+    
+    mapbi_df <- map_df()
+    
+    mapbi_df$count_bin <- case_when(mapbi_df$count == 0 ~ 1, mapbi_df$count <= 5 ~ 2, TRUE ~ 3)
+      
+    mapbi_df$outcome_bin <- cut(mapbi_df$outcome_value,
+                                breaks = classInt::classIntervals(mapbi_df$outcome_value, n = 3, 
+                                style = "quantile")$brks,
+                                include.lowest = TRUE, labels = FALSE)
+    
+    mapbi_df$bi_class <- paste0(mapbi_df$count_bin, "-", mapbi_df$outcome_bin)
+    
+    mapbi_df
+  })
+  
+  # Insert bivariate color palette (used recommendations from https://www.joshuastevens.net/cartography/make-a-bivariate-choropleth-map/)
+  
+  bi_colors <- c(
+    "1-1" = "#e8e8e8",
+    "1-2" = "#b0d5df",
+    "1-3" = "#64acbe",
+    "2-1" = "#e4acac",
+    "2-2" = "#ad9ea5",
+    "2-3" = "#627f8c",
+    "3-1" = "#c85a5a",
+    "3-2" = "#985356",
+    "3-3" = "#574249"
+  )
+  
+  # Create leaflet output
+  
+  output$map <- renderLeaflet({
+    
+    mapbi_df <- map_df_bivariate()
+    
+    mapbi_df$color <- bi_colors[mapbi_df$bi_class]
+    
+    leaflet(mapbi_df) %>% 
+      addProviderTiles("CartoDB.Positron") %>% 
+      setView(lng = -98, lat = 39, zoom = 4) %>% 
+      addPolygons(fillColor = ~color, fillOpacity = 0.8, color = "white", weight = 0.3,
+                  popup = ~paste0("County: ", NAME,
+                                  "<br>Facilities: ", count,
+                                  "<br>", input$mh_outcome, ": ", round(outcome_value, 2)))
+  })
 
+}
 
 
 shinyApp(ui, server)
