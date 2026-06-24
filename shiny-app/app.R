@@ -200,6 +200,13 @@ output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("li
     
     req(input$mh_outcome)
     
+#    state_facility_maternal_sf %>% # use state level data, if we want to visualize by state not county
+#      mutate(outcome_value = switch(input$mh_outcome,
+#                                    "Cesarean Deliveries" = avg_cesarean, 
+#                                    "Low Birth Weight" = avg_lbw,
+#                                    "Fertility Rate" = avg_fertility, 
+#                                    "Preterm Births" = avg_preterm))
+    
     county_facility_maternal_sf %>% 
       mutate(outcome_value = switch(input$mh_outcome,
                                     "Cesarean Deliveries" = `Cesarean Delivery Percent` , 
