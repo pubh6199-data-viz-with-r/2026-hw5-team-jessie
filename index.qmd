@@ -404,7 +404,21 @@ mhcf_2023_scatterdf # Use this for plotting
 state_data_2014_2024 # Use this for plotting
  view(state_data_2014_2024)
  view(all50_state_facilities)
-  
+ 
+# creating national averages for each maternal health outcome 
+  ntl_maternal_avgs <- state_data_2014_2024 %>%
+  filter(State != "District of Columbia") %>%   #filter out DC
+  group_by(Year) %>%
+    summarise(
+    ntl_cesarean = mean(`Cesarean Deliveries Percent`, na.rm = TRUE),
+    ntl_lbw = mean(`Low Birth Weight Percent`, na.rm = TRUE),
+    ntl_fertility = mean(`Fertility Rate per 1,000 women`, na.rm = TRUE),
+    ntl_preterm = mean(`Preterm Birth Percent`, na.rm = TRUE),
+    .groups = "drop"
+  )
+  view(ntl_maternal_avgs)       
+        
+        
 ```
 
 ## OR Shiny app: Plastic Chemical Production Facilities and Maternal Health in the US
