@@ -365,7 +365,7 @@ mhcf_scatterplot
 
 ```
 
-## Visualization 3: Faceted Line Graph
+## Visualization 3: Line Graph
 
 _Describe what this plot shows, and why it's important._
 
