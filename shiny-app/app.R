@@ -33,16 +33,18 @@ ui <- page_sidebar(
       card_header("Comparing Maternal Health Outcomes by State"),
       
       layout_columns(
-        col_widths = c(3, 9),
+        col_widths = c(2, 10),
         
+      div(  
         selectizeInput(
           "selected_states", 
           "Select up to 5 states:", 
           choices = state.abb, 
-          selected = c("LA", "TX", "IL", "KY", "IN"),
+          selected = NULL,
           multiple = TRUE, 
           options = list(maxItems = 5),
-          width = "200px"
+          width = "70px"
+         )
         ),
         
         plotlyOutput("linegraph", height = 600)
@@ -77,51 +79,51 @@ server <- function(input, output, session) {
   
   output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("linegraph) from ui
   
-  validate(     
-    need(length(input$selected_states) > 0, "Please select at least one state.")
-  )     # makes it so you don thave to have 5 states to see a graph, but can see it with 1-4 too
     
-  outcome_col <- switch(input$mh_outcome,
+  outcome_col <- switch(input$mh_outcome,      #user picks an option and it pulls from the called dataset
                         "Cesarean Deliveries" = "Cesarean Deliveries Percent",
                         "Low Birth Weight" = "Low Birth Weight Percent", 
                         "Fertility Rate" = "Fertility Rate per 1,000 women",
                         "Preterm Births" = "Preterm Birth Percent"
                         )
   
+  national_col <- switch(input$mh_outcome,     #user picks an option and it pulls from the called dataset
+                         "Cesarean Deliveries" = "ntl_cesarean",
+                         "Low Birth Weight" = "ntl_lbw",
+                         "Fertility Rate" = "ntl_fertility",
+                         "Preterm Births" = "ntl_preterm"
+                        )
+  
   line_data <- state_data_2014_2024 %>%      #preparing data for line graph                    
     filter(State %in% input$selected_states) %>%      #only states selected will show
     left_join(all50_state_facilities, by = c("State" = "state_abb")) %>%      #add state facility data
     mutate(
-      selected_value = .data[[outcome_col]]    #only outcome the user selects is shown
-        )     
+      selected_value = .data[[outcome_col]],      #only outcome the user selects is shown
+      Series = State  
+      )     
   
-  label_data <- line_data %>%
-    group_by(State) %>%
-    filter(Year == max(Year)) %>%
-    ungroup() 
+  national_data <- ntl_maternal_avgs %>%
+    mutate(
+      selected_value = .data[[national_col]],
+      Series = "National" 
+    )
+  
+    line_data <- bind_rows(line_data, national_data)  # makes it so you dont have to have 5 states to see a graph, but can see it with 1-4 too, and national avg is fixed
+
   
   line_plot <- ggplot(
     line_data,          #user selects outcome, and state will be assigned a color 
     aes(
       x = Year,
       y = selected_value,
-      group = State,
-      text = paste0(
-        "State: ", State
+      color = Series,
+      group = Series,
         )
-      )
-    ) +
+      ) +
     
-    geom_line(linewidth = 0.7, color = "black") +    #line to connect the time series together
-    geom_point(size = 1, color = "black") +       #plotting points per year
+    geom_line(linewidth = 0.4) +    #line to connect the time series together
+    geom_point(size = 0.2) +       #plotting points per year
     
-    geom_text(              #State abbreviation pops out next to state line
-      data = label_data,
-      aes(label = State),
-      hjust = 4,
-      size = 3,
-      color = "black"
-    ) +
     
     labs(
       title = paste(input$mh_outcome, "Over Time"),
@@ -141,7 +143,7 @@ server <- function(input, output, session) {
       plot.title = element_text(size = 13),
       plot.subtitle = element_text(size = 10)
     )
-  ggplotly(line_plot, tooltip = "text")
+  ggplotly(line_plot, tooltip = "none")
 })
 
 
