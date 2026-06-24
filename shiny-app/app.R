@@ -7,7 +7,7 @@ library(leaflet)
 library(classInt)
 
 ui <- page_sidebar(
-  
+
   # Create collapsible side panel on left of page:
   
   title = "Plastics Production Chemical Facilities and Maternal Health in the U.S.",
@@ -23,31 +23,108 @@ ui <- page_sidebar(
               choices = c("Cesarean Deliveries", "Low Birth Weight", 
                           "Fertility Rate", "Preterm Births")),
   
-  # Create two sections in one row for faceted line graph and scatterplot:
+  # Create two sections in one row for line graph and scatterplot:
   
-  layout_columns(col_widths = c(6, 6), 
-                 
+  layout_columns(
+    col_widths = c(6, 6), 
+    
     card(
-      card_header("Maternal Health by State Comparison"),
-      selectizeInput("selected_states", "Select up to 5 states:", choices = state.abb, 
-      multiple = TRUE, options = list(maxItems = 5)),
-                      
-    plotOutput("linegraph")),
-                 
-    card(plotlyOutput("scatterplot"))),
-            
+      card_header("Comparing Maternal Health Outcomes by State"),
+      
+      layout_columns(
+        col_widths = c(3, 9),
+        
+        selectizeInput(
+          "selected_states", 
+          "Select up to 5 states:", 
+          choices = state.abb, 
+          selected = c("LA", "TX", "IL", "KY", "IN"),
+          multiple = TRUE, 
+          options = list(maxItems = 5),
+          width = "200px"
+        ),
+        
+        plotlyOutput("linegraph", height = 600)
+      )
+    ),
+    
+    card(plotlyOutput("scatterplot")
+    )
+  ),
+  
   # Designate section below the two plots for the map:
   
-  layout_columns(col_widths = 12, leafletOutput("map", height = 600))
-  
+  layout_columns(
+    col_widths = 12, 
+    leafletOutput("map", height = 600)
   )
-  
+)
+
+
+
+
 
 server <- function(input, output, session) {
   
    # Create reactive line graph based on dropdown selection:
   
+output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("linegraph) from ui
   
+  validate(     
+    need(length(input$selected_states) > 0, "Please select at least one state.")
+  )     # makes it so you don thave to have 5 states to see a graph, but can see it with 1-4 too
+    
+  outcome_col <- switch(input$mh_outcome,
+                        "Cesarean Deliveries" = "Cesarean Deliveries Percent",
+                        "Low Birth Weight" = "Low Birth Weight Percent", 
+                        "Fertility Rate" = "Fertility Rate per 1,000 women",
+                        "Preterm Births" = "Preterm Birth Percent"
+                        )
+  
+  line_data <- state_data_2014_2024 %>%      #preparing data for line graph                    
+    filter(State %in% input$selected_states) %>%      #only states selected will show
+  
+  left_join(all50_state_facilities, by = c("State" = "state_abb")) %>%      #add state facility data
+    mutate(
+      selected_value = .data[[outcome_col]]    #only outcome the user selects is shown
+        )     
+  
+  line_plot <- ggplot(
+    line_data,          #user selects outcome, and state will be assigned a color 
+    aes(
+      x = Year,
+      y = selected_value,
+      color = State,
+      group = State,
+      text = paste0(
+        "State: ", State,
+        "<br>Year: ", Year,
+        "<br>", input$mh_outcome, ": ", round(selected_value, 2),
+        "<br>Chemical facilities: ", count)
+      )
+    ) +
+    
+    geom_line(linewidth = 1) +    #line to connect the time series together
+    geom_point(size = 2) +       #plotting points per year
+    labs(
+      title = paste(input$mh_outcome, "Over Time"),
+      subtitle = "Hover over lines to see chemical facility counts",
+      x = "Year",
+      y = outcome_label(),     #the reactive label
+      color = "State"
+      ) +
+    scale_x_continuous(
+      breaks = c(2014, 2016, 2018, 2020, 2022, 2024)
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",
+      axis.title.y = element_text(size = 9),
+      plot.title = element_text(size = 13),
+      plot.subtitle = element_text(size = 10)
+    )
+  ggplotly(line_plot, tooltip = "text")
+})
    # Create reactive scatterplot based on dropdown selection:
   
   filtered_data <- reactive({ # Create reactive data frame
