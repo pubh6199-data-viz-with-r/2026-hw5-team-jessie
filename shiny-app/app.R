@@ -5,6 +5,7 @@ library(dplyr)
 library(sf)
 library(leaflet)
 library(classInt)
+library(ggrepel)
 
 ui <- page_sidebar(
 
@@ -83,39 +84,50 @@ output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("li
   
   line_data <- state_data_2014_2024 %>%      #preparing data for line graph                    
     filter(State %in% input$selected_states) %>%      #only states selected will show
-  
-  left_join(all50_state_facilities, by = c("State" = "state_abb")) %>%      #add state facility data
+    left_join(all50_state_facilities, by = c("State" = "state_abb")) %>%      #add state facility data
     mutate(
       selected_value = .data[[outcome_col]]    #only outcome the user selects is shown
         )     
+  
+  label_data <- line_data %>%
+    group_by(State) %>%
+    filter(Year == max(Year)) %>%
+    ungroup() 
   
   line_plot <- ggplot(
     line_data,          #user selects outcome, and state will be assigned a color 
     aes(
       x = Year,
       y = selected_value,
-      color = State,
       group = State,
       text = paste0(
-        "State: ", State,
-        "<br>Year: ", Year,
-        "<br>", input$mh_outcome, ": ", round(selected_value, 2),
-        "<br>Chemical facilities: ", count)
+        "State: ", State
+        )
       )
     ) +
     
-    geom_line(linewidth = 1) +    #line to connect the time series together
-    geom_point(size = 2) +       #plotting points per year
+    geom_line(linewidth = 0.7, color = "black") +    #line to connect the time series together
+    geom_point(size = 1, color = "black") +       #plotting points per year
+    
+    geom_text(              #State abbreviation pops out next to state line
+      data = label_data,
+      aes(label = State),
+      hjust = 4,
+      size = 3,
+      color = "black"
+    ) +
+    
     labs(
       title = paste(input$mh_outcome, "Over Time"),
       subtitle = "Hover over lines to see chemical facility counts",
       x = "Year",
       y = outcome_label(),     #the reactive label
       color = "State"
-      ) +
+    ) +
     scale_x_continuous(
       breaks = c(2014, 2016, 2018, 2020, 2022, 2024)
     ) +
+    
     theme_minimal() +
     theme(
       legend.position = "bottom",
@@ -125,6 +137,9 @@ output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("li
     )
   ggplotly(line_plot, tooltip = "text")
 })
+
+
+
    # Create reactive scatterplot based on dropdown selection:
   
   filtered_data <- reactive({ # Create reactive data frame
