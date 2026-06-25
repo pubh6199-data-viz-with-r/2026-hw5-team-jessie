@@ -14,6 +14,7 @@ ui <- page_sidebar(
   title = NULL,
   
   # Create collapsible side panel on left of page:
+
   
   sidebar = sidebar(
     title = div(
@@ -107,16 +108,16 @@ ui <- page_sidebar(
       layout_columns(
         col_widths = c(2, 10),
         
-      div(  
-        selectizeInput(
-          "selected_states", 
-          "Select up to 5 states:", 
-          choices = state.abb, 
-          selected = NULL,
-          multiple = TRUE, 
-          options = list(maxItems = 5),
-          width = "70px"
-         )
+        div(  
+          selectizeInput(
+            "selected_states", 
+            "States:", 
+            choices = state.abb, 
+            selected = NULL,
+            multiple = TRUE, 
+            options = list(maxItems = 3),
+            width = NULL
+          )
         ),
         
         plotlyOutput("linegraph", height = 600)
@@ -155,8 +156,16 @@ server <- function(input, output, session) {
   
   output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("linegraph) from ui
     
+<<<<<<< HEAD
     
     outcome_col <- switch(input$mh_outcome,      #user picks an option and it pulls from the called dataset
+=======
+#    validate(     
+#     need(length(input$selected_states) > 0, "Please select at least one state.")
+ #   )     # makes it so you don thave to have 5 states to see a graph, but can see it with 1-4 too
+    
+    outcome_col <- switch(input$mh_outcome,
+>>>>>>> 151c325d80a2bf8ecb45d18482fbf87c94e4cbf9
                           "Cesarean Deliveries" = "Cesarean Deliveries Percent",
                           "Low Birth Weight" = "Low Birth Weight Percent", 
                           "Fertility Rate" = "Fertility Rate per 1,000 women",
@@ -172,21 +181,54 @@ server <- function(input, output, session) {
     
     line_data <- state_data_2014_2024 %>%      #preparing data for line graph                    
       filter(State %in% input$selected_states) %>%      #only states selected will show
+<<<<<<< HEAD
       left_join(all50_state_facilities, by = c("State" = "state_abb")) %>%      #add state facility data
       mutate(
         selected_value = .data[[outcome_col]],      #only outcome the user selects is shown
         Series = State  
       )     
+=======
+      left_join(all50_state_facilities, by = c("State" = "state_abb")) %>% 
+      mutate(
+        selected_value = .data[[outcome_col]],   #only outcome the user selects is shown
+        Series = State
+        ) %>%    
+    select(Year, selected_value, Series)
+    
+>>>>>>> 151c325d80a2bf8ecb45d18482fbf87c94e4cbf9
     
     national_data <- ntl_maternal_avgs %>%
       mutate(
         selected_value = .data[[national_col]],
         Series = "National" 
+<<<<<<< HEAD
       )
+=======
+      ) %>% 
+      select(Year, selected_value, Series)
+>>>>>>> 151c325d80a2bf8ecb45d18482fbf87c94e4cbf9
     
     line_data <- bind_rows(line_data, national_data)  # makes it so you dont have to have 5 states to see a graph, but can see it with 1-4 too, and national avg is fixed
     
     
+<<<<<<< HEAD
+=======
+    state_series <- setdiff(unique(line_data$Series), "National")
+    
+    line_colors <- c(
+      setNames(
+        colorRampPalette(c("#e4acac", "#ad9ea5"))(length(state_series)),
+        state_series
+      ),
+      "National" = "#8B0000"
+    )
+    
+ #   label_data <- line_data %>%
+#      group_by(State) %>%
+#     filter(Year == max(Year)) %>%
+#      ungroup() 
+    
+>>>>>>> 151c325d80a2bf8ecb45d18482fbf87c94e4cbf9
     line_plot <- ggplot(
       line_data,          #user selects outcome, and state will be assigned a color 
       aes(
@@ -194,6 +236,7 @@ server <- function(input, output, session) {
         y = selected_value,
         color = Series,
         group = Series,
+<<<<<<< HEAD
       )
     ) +
       
@@ -211,6 +254,38 @@ server <- function(input, output, session) {
         color = "State"
       ) +
       
+=======
+ #       text = paste0(
+ #         "State: ", State
+        )
+    ) +
+      
+      geom_line(linewidth = 0.4) +
+      geom_line(
+        data = dplyr::filter(line_data, Series == "National"),
+        linewidth = 0.6
+      ) +
+      geom_point(size = 0.2) +
+      
+#      geom_text(              #State abbreviation pops out next to state line
+ #       data = label_data,
+#        aes(label = State),
+ #       hjust = 4,
+#        size = 3,
+ #       color = "black"
+#      ) +
+      
+      labs(
+        title = paste(input$mh_outcome, "Over Time"),
+        subtitle = "Hover over lines to see chemical facility counts",
+        x = "Year",
+        y = outcome_label(),     #the reactive label
+        color = NULL
+      ) +
+      
+      scale_color_manual(values = line_colors) +
+      
+>>>>>>> 151c325d80a2bf8ecb45d18482fbf87c94e4cbf9
       scale_x_continuous(
         breaks = c(2014, 2016, 2018, 2020, 2022, 2024)
       ) +
@@ -219,6 +294,7 @@ server <- function(input, output, session) {
       theme(
         legend.position = "bottom",
         axis.title.y = element_text(size = 9),
+<<<<<<< HEAD
         axis.title.x = element_text(size = 9),
         plot.title = element_text(size = 9, hjust = 0.5),
         plot.subtitle = element_text(size = 10)
@@ -226,6 +302,18 @@ server <- function(input, output, session) {
     ggplotly(line_plot, tooltip = "none")
   })
 
+=======
+        plot.title = element_text(size = 13),
+        plot.subtitle = element_text(size = 10)
+      )
+    ggplotly(line_plot, tooltip = "none") %>%
+      config(displayModeBar = FALSE) 
+  })
+  
+  
+  
+  
+>>>>>>> 151c325d80a2bf8ecb45d18482fbf87c94e4cbf9
    # Create reactive scatterplot based on dropdown selection:
   
   filtered_data <- reactive({ # Create reactive data frame
@@ -253,6 +341,8 @@ server <- function(input, output, session) {
                           "Fertility Rate" = "Births per 1,000 women", 
                           "Preterm Births" = "Rate (%)")})
   
+  
+  
   # Create reactive scatterplot:
   
   output$scatterplot <- renderPlotly({
@@ -278,8 +368,8 @@ server <- function(input, output, session) {
     theme(axis.title = element_text(size = 9),
           plot.title = element_text(size = 9, hjust = 0.5))
     
-    ggplotly(scatter, tooltip = "text") 
-     
+    ggplotly(scatter, tooltip = "text") %>%
+      config(displayModeBar = FALSE)
   })
   
   # Create reactive bivariate chloropleth map based on dropdown selection:
