@@ -220,6 +220,9 @@ server <- function(input, output, session) {
         y = selected_value,
         color = Series,
         group = Series,
+        text = paste(
+                     paste0(outcome_tooltip(),":"), 
+                     round(selected_value, 2))
 
       )
     ) +
@@ -267,8 +270,9 @@ server <- function(input, output, session) {
         plot.title = element_text(size = 9, hjust = 0.5),
         plot.subtitle = element_text(size = 10)
       )
-    ggplotly(line_plot, tooltip = "none") %>% 
-      config(displayModeBar = FALSE) 
+    ggplotly(line_plot, tooltip = "text") %>% 
+      layout(dragmode = FALSE) %>%
+      config(displayModeBar = FALSE, scrollZoom = FALSE) 
   })
   
   
@@ -327,7 +331,8 @@ server <- function(input, output, session) {
           plot.title = element_text(size = 9, hjust = 0.5))
     
     ggplotly(scatter, tooltip = "text") %>%
-      config(displayModeBar = FALSE)
+      layout(dragmode = FALSE) %>%
+      config(displayModeBar = FALSE, scrollZoom = FALSE)
   })
   
   # Create reactive bivariate chloropleth map based on dropdown selection:
