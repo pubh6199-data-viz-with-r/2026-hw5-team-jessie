@@ -52,18 +52,24 @@ ui <- page_sidebar(
       )
     ),
     
-    card(plotlyOutput("scatterplot")
+    card(
+      card_header("Chemical Facilities and Maternal Health Scatterplot"),
+      plotlyOutput("scatterplot")
     )
   ),
   
   # Designate section below the two plots for the map:
   
-  layout_columns(
+  card(
+    card_header("Bivariate Chloropleth Map: State Level Chemical Facilities and Maternal Health"),
+    
+    layout_columns(
     col_widths = 12, 
     leafletOutput("map", height = 600)
   )
-)
+) 
 
+)
 
 
 
@@ -72,7 +78,7 @@ server <- function(input, output, session) {
   
    # Create reactive line graph based on dropdown selection:
   
-output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("linegraph) from ui
+  output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("linegraph) from ui
   
     
   outcome_col <- switch(input$mh_outcome,      #user picks an option and it pulls from the called dataset
@@ -183,7 +189,7 @@ output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("li
                                           paste0("<br>", outcome_tooltip(),":"), 
                                           round(selected_value, 2)))) +
     
-    geom_point(size = 3, alpha = 0.5, color = "steelblue") + 
+    geom_point(size = 3, alpha = 0.5, color = "#64acbe") + 
     
     scale_x_log10() + # data is skewed; try logging
     
@@ -203,12 +209,19 @@ output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("li
     
     req(input$mh_outcome)
     
-    county_facility_maternal_sf %>% 
+    state_facility_maternal_sf %>% # use state level data, if we want to visualize by state not county
       mutate(outcome_value = switch(input$mh_outcome,
-                                    "Cesarean Deliveries" = `Cesarean Delivery Percent` , 
-                                    "Low Birth Weight" = `Low birthweight raw value`,
-                                    "Fertility Rate" = `Fertility Rate`, 
-                                    "Preterm Births" = preterm_birth_rate))
+                                    "Cesarean Deliveries" = avg_cesarean, 
+                                    "Low Birth Weight" = avg_lbw,
+                                    "Fertility Rate" = avg_fertility, 
+                                    "Preterm Births" = avg_preterm))
+    
+#    county_facility_maternal_sf %>% 
+#      mutate(outcome_value = switch(input$mh_outcome,
+#                                    "Cesarean Deliveries" = `Cesarean Delivery Percent` , 
+#                                    "Low Birth Weight" = `Low birthweight raw value`,
+#                                    "Fertility Rate" = `Fertility Rate`, 
+#                                    "Preterm Births" = preterm_birth_rate))
   })
   
   ## Classify into 3x3 bivariate bins
@@ -223,7 +236,7 @@ output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("li
                                 style = "quantile")$brks,
                                 include.lowest = TRUE, labels = FALSE)
     
-    mapbi_df$bi_class <- paste0(mapbi_df$count_bin, "-", mapbi_df$outcome_bin)
+    mapbi_df$bi_class <- paste0(mapbi_df$outcome_bin, "-", mapbi_df$count_bin)
     
     mapbi_df
   })
@@ -250,13 +263,83 @@ output$linegraph <- renderPlotly({ #create linegraph and calls on plotOutput("li
     
     mapbi_df$color <- bi_colors[mapbi_df$bi_class]
     
+    legend_html <- paste0(
+      "
+<div style='background:white;
+            padding:10px;
+            padding:10px;
+            border:1px solid #ccc;
+            border-radius:5px;
+            font-size:10px;'>
+
+<b>Bivariate Legend</b><br><br>
+
+<div style='display:flex;
+            align-items:center;'>
+
+  <!-- LEFT SIDE LABEL -->
+  <div style='text-align:center;
+              margin-right:12px;
+              font-weight:bold;
+              line-height:1.2;'>
+
+    ↑<br>
+    Higher<br>
+    # of<br> 
+    Chemical<br>
+    Facilities
+
+  </div>
+
+  <!-- MATRIX -->
+  <table style='border-collapse:collapse;'>
+
+    <tr>
+      <td style='background:#64acbe;width:25px;height:25px'></td>
+      <td style='background:#627f8c;width:25px;height:25px'></td>
+      <td style='background:#574249;width:25px;height:25px'></td>
+    </tr>
+
+    <tr>
+      <td style='background:#b0d5df;width:25px;height:25px'></td>
+      <td style='background:#ad9ea5;width:25px;height:25px'></td>
+      <td style='background:#985356;width:25px;height:25px'></td>
+    </tr>
+
+    <tr>
+      <td style='background:#e8e8e8;width:25px;height:25px'></td>
+      <td style='background:#e4acac;width:25px;height:25px'></td>
+      <td style='background:#c85a5a;width:25px;height:25px'></td>
+    </tr>
+
+  </table>
+
+</div>
+
+<!-- BOTTOM LABEL -->
+<div style='margin-top:8px;
+            text-align:center;
+            font-weight:bold;'>
+
+  →<br>
+  Higher ", outcome_label(), "
+  
+</div>
+
+</div>
+"
+    
+    )
+    
     leaflet(mapbi_df) %>% 
       addProviderTiles("CartoDB.Positron") %>% 
-      setView(lng = -98, lat = 39, zoom = 4) %>% 
+      setView(lng = -98, lat = 39, zoom = 3) %>% 
       addPolygons(fillColor = ~color, fillOpacity = 0.8, color = "white", weight = 0.3,
                   popup = ~paste0("County: ", NAME,
                                   "<br>Facilities: ", count,
-                                  "<br>", input$mh_outcome, ": ", round(outcome_value, 2)))
+                                  "<br>", input$mh_outcome, ": ", round(outcome_value, 2))) %>% 
+     
+       addControl(html = legend_html, position = "bottomright")
   })
 
 }
