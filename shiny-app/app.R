@@ -10,6 +10,7 @@ library(ggrepel)
 ui <- page_sidebar(
 
   # Create collapsible side panel on left of page:
+
   
   title = "Plastics Production Chemical Facilities and Maternal Health in the U.S.",
   sidebar = sidebar(
@@ -43,7 +44,7 @@ ui <- page_sidebar(
           selected = NULL,
           multiple = TRUE, 
           options = list(maxItems = 5),
-          width = "70px"
+          width = NULL
          )
         ),
         
