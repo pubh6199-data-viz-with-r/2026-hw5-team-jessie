@@ -1,3 +1,6 @@
+# Load packages
+library(shiny)
+library(bslib)
 library(shiny)
 library(bslib)
 library(plotly)
@@ -6,6 +9,13 @@ library(sf)
 library(leaflet)
 library(classInt)
 library(ggrepel)
+
+# Import datasets
+state_data_2014_2024 <- readRDS("app-data/state_data_2014_2024.rds")
+mhcf_2023_scatterdf <- readRDS("app-data/mhcf_2023_scatterdf.rds")
+state_facility_maternal_sf <- readRDS("app-data/state_facility_maternal_sf.rds")
+all50_state_facilities <- readRDS("app-data/all50_state_facilities.rds")
+ntl_maternal_avgs <- readRDS("app-data/ntl_maternal_avgs.rds")
 
 ui <- page_sidebar(
   
@@ -22,7 +32,7 @@ ui <- page_sidebar(
     width = 400,
     open = "closed",
     div(
-      style = "font-size:14px;",
+      style = "font-size:12px;",
     p(
       "This interactive dashboard explores the relationship between plastic chemical production facilities and maternal health outcomes in the United States."
       ),
@@ -34,19 +44,24 @@ ui <- page_sidebar(
       ),
     
     p(
-      "Examining whether the number of plastic chemical production facilities is related to adverse maternal health outcomes may improve understanding and help identify policy interventions that reduce maternal health disparities."
+      "Examining whether the presence of plastic chemical production facilities is related to adverse maternal health outcomes may improve understanding and help identify policy interventions that reduce maternal health disparities."
     ),
     
     strong("Methods"),
     
     p(
-      "Information on chemical production facilities was obtained from the most recent round of EPA Chemical Data Reporting in 2024. State level maternal health data was obtained from the CDC’s National Vital Statistics System. The dashboard was developed in R, and coding assistance was provided by ChatGPT (GPT-5.5)."
+      "Chemical production facility data was obtained from the most recent round of EPA Chemical Data Reporting in 2024. A list of the plastic production chemicals included in this analysis is available",
+      tags$a(href = "https://docs.google.com/spreadsheets/d/1SMKLifv7GmNUcRvL_HIJr1Ib90fFDOkrgmID7XN3OO8/edit?gid=0#gid=0", 
+      "here.",
+      target = "_blank" 
+      ),
+      "State-level maternal health data was obtained from the CDC’s National Vital Statistics System. The dashboard was developed in R, and coding assistance was provided by ChatGPT (GPT-5.5)."
     ),
     
     strong("The Dashboard"),
     
     p(
-      "Users can begin the investigation by selecting for fertility, preterm birth, cesarean deliveries, or low birth weight, which then produces three visualizations for exploration. First, the line graph shows maternal health trends over time, and compares state data to the national average. Next, the scatterplot investigates the relationship between the frequency of facilities and maternal health by state. Lastly, the map provides an interactive, geographic visual of the relationship between chemical facilities and maternal health."
+      "Users can begin the investigation by selecting for fertility, preterm birth, cesarean deliveries, or low birth weight, which then produces three visualizations for exploration. First, the line graph shows maternal health trends over time, and compares state data to the national average. Next, the scatterplot investigates the relationship between the frequency of facilities and maternal health by state. Lastly, the map provides an interactive visualization of the geographic relationship between chemical facilities and maternal health."
     )
     
   )),
@@ -113,7 +128,7 @@ ui <- page_sidebar(
             "selected_states", 
             "States:", 
             choices = state.abb, 
-            selected = NULL,
+            selected = state.abb[1], #NULL,
             multiple = TRUE, 
             options = list(maxItems = 3),
             width = NULL
@@ -162,6 +177,8 @@ server <- function(input, output, session) {
 #     need(length(input$selected_states) > 0, "Please select at least one state.")
  #   )     # makes it so you don thave to have 5 states to see a graph, but can see it with 1-4 too
     
+    req(input$selected_states)
+    
     outcome_col <- switch(input$mh_outcome,
 
                           "Cesarean Deliveries" = "Cesarean Deliveries Percent",
@@ -177,9 +194,9 @@ server <- function(input, output, session) {
                            "Preterm Births" = "ntl_preterm"
     )
     
-    line_data <- state_data_2014_2024 %>%      #preparing data for line graph                    
+   line_data <- state_data_2014_2024 %>%      #preparing data for line graph                    
       filter(State %in% input$selected_states) %>%      #only states selected will show
-
+    
       left_join(all50_state_facilities, by = c("State" = "state_abb")) %>%      #add state facility data
       mutate(
         selected_value = .data[[outcome_col]],      #only outcome the user selects is shown
@@ -471,7 +488,7 @@ server <- function(input, output, session) {
     
     leaflet(mapbi_df) %>% 
       addProviderTiles("CartoDB.Positron") %>% 
-      setView(lng = -98, lat = 39, zoom = 4) %>% 
+      setView(lng = -98, lat = 39, zoom = 3.5) %>% 
       addPolygons(fillColor = ~color, fillOpacity = 0.8, color = "white", weight = 0.3,
                   popup = ~paste0("County: ", NAME,
                                   "<br>Facilities: ", count,

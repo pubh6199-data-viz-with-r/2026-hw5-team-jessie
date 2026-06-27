@@ -6,6 +6,6 @@ website:
   title: "PUBH 6199, Summer 2026"
   navbar:
     left:
-      - href: index.qmd
+      - href: 5-final.qmd
         text: Final project write-up
       

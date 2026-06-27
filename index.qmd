@@ -1,7 +1,10 @@
 ---
-title: "Final Project: Plastic Production Chemicals and Maternal Health Outcomes"
-author: "Salem Yohannes , Megan Liu"
+title: "Final Project: Plastic Chemical Facilities and Maternal Health Explorer"
+author: "Salem Yohannes and Megan Liu"
 date: "2026-06-25"
+
+#runtime: shiny 
+
 params:
   number: 5
   purpose: "Final project for PUBH 6199: Visualizing Data with R"
@@ -18,7 +21,6 @@ execute:
   message: false
 output-dir: docs
 ---
-
 
 ```{r}
 #| label: setup
@@ -37,11 +39,19 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-_Briefly introduce your topic and research question._
+This project seeks to investigate whether there is a relationship between plastic chemical production and maternal health outcomes in the United States. 
+
+Women in the US are at greater risk of experiencing adverse maternal health outcomes.[1] These disparate outcomes are a result of a variety of factors, including environmental exposures, systemic racism, inaccessibility to quality care, and policy inequities; and can persist regardless of protective factors such as socioeconomic status and education.[2] Exposure to chemicals involved in producing plastic is linked to maternal health effects such as decreased fertility, preterm birth, cesarean deliveries, and low birth weight.[3] These toxic chemicals can contaminate the environment during production, exposing communities near facilities to hazardous chemicals. Fenceline communities experience negative health outcomes from toxic exposures, including adverse maternal health impacts among women living in Louisiana’s Cancer Alley.[4] 
+
+Examining whether the presence of plastic chemical production facilities is related to adverse maternal health outcomes in communities may improve understanding of disparities and identify areas where policy interventions may be needed. To investigate this relationship, an interactive dashboard was created to explore chemical facilities and maternal health by state. 
 
 ## Data
 
-_Describe your data source(s), including where it came from, the key variables, and any pre-processing steps._
+Maternal health outcomes were downloaded from the CDC’s National Vital Statistics System, which provides a range of birth-related statistics based on data from birth certificates.[5] Data on fertility rate, preterm births, cesarean deliveries, and low birth weight were downloaded, as these four outcomes are associated with exposure to plastic chemicals. Key variables included year, state names, and incidence rates of the four outcomes. The maternal health data was joined by year and state into one data frame in R. Additional data frames were created to prepare for the three dashboard visualizations. Line graph maternal health data was filtered for 2014 to 2024 to show trends over a 10-year period, with a new column calculating national averages. Scatterplot and bivariate map data was filtered for 2023, to match when chemical facility data was last reported. 
+
+Chemical facility data was obtained from the most recent round of EPA Chemical Data Reporting in 2024, which contains information on chemical manufacturers and importers in the US.[6] Key variables included chemical names, chemical identification numbers, facility activity, and facility locations by state. The data was filtered to include 45 plastic chemicals (full list and chemical selection criteria linked [here](https://docs.google.com/spreadsheets/d/1SMKLifv7GmNUcRvL_HIJr1Ib90fFDOkrgmID7XN3OO8/edit?gid=0#gid=0)), the 50 states (territories were dropped), and manufacturing facilities (importing facilities, facilities under TSCA Confidential Business Information provisions, and missing values were dropped), resulting in 607 plastic chemical facilities included in the analysis.
+
+The cleaned maternal health and chemical facility data were joined by state for the scatterplot. The combined data was then merged with state shapefiles using the {tigris} package for the bivariate choropleth map. 
 
 ```{r}
 #| eval: false
@@ -75,12 +85,10 @@ plastic_cas
 cdr_plastic <- cdr %>% 
   filter(`CHEMICAL ID` %in% plastic_cas) # 610 production facilities
 
-
------------
 # Upload maternal health data below
 
 # Load libraries and data
-install.packages("dplyr")
+#install.packages("dplyr")
 library(dplyr)
 library(readxl)
 
@@ -180,10 +188,6 @@ fertility_cesarean_county <- fertility_cesarean_county %>%
 
 ```   
 
-## Visualization 1: Bivariate Chloropleth Map
-
-_Describe what this plot shows, and why it's important._
-
 ```{r}
 # Prepare chemical facility data
 # Load necessary libraries and datasets
@@ -203,7 +207,7 @@ options(tigris_use_cache = TRUE)
 sum(is.na(cdr_plastic$`SITE COUNTY / PARISH`)) # 43 missing values
 
 # Use the zipcodeR package which has zip codes and county names, to join county names by zip code to the 43 rows missing county name info
-install.packages("zipcodeR")
+#install.packages("zipcodeR")
 library(zipcodeR)
 
 # Create df with zipcodes
@@ -219,7 +223,7 @@ cdr_plastic2 <- cdr_plastic %>%
 names(cdr_plastic2) # Check that join worked, and all columns needed were added
 
 # Join didn't work for zip codes that had the additional 4 digits. Update zip code column to only include the 5 first digits
-cdr_plastic <- cdr_plastic %>%  mutate(
+ cdr_plastic <- cdr_plastic %>%  mutate(
   zip_code = substr(`SITE POSTAL CODE`, 1, 5))
 
 # Re-join
@@ -310,7 +314,7 @@ sum(is.na(county_facility_maternal_sf$`Fertility Rate`)) # 2558 counties with no
 sum(is.na(county_facility_maternal_sf$`Cesarean Delivery Percent`)) # 2558 counties with no c-section rate data
 
 # Export county_facility_maternal_sf into Excel, so can upload to Google as a public sheet for Shiny Assistant to reference to provide bivariate chloropleth map code
-install.packages("writexl")
+#install.packages("writexl")
 library(writexl)
 write_xlsx(county_facility_maternal_sf, "county_facility_maternal_sf.xlsx")
 
@@ -332,21 +336,22 @@ sum(state_facilities_sf$count) # 610 states
 state_facilities_sf <- state_facilities_sf %>% 
   filter(!STUSPS %in% c("PR", "MP", "GU", "VI", "AS", "DC"))
 
+# Create columns containing state averages grouped by state and year
+state_maternalhealth_avgs <- State_Maternal_Outcome_Data %>% 
+  group_by(Year, State) %>% 
+  mutate(avg_cesarean = mean(`Cesarean Deliveries Percent`, na.rm = TRUE),
+         avg_lbw = mean(`LBW Percent`, na.rm = TRUE),
+         avg_fertility = mean(`Fertility Rate`, na.rm = TRUE), 
+         avg_preterm = mean(`Preterm Births Percent`, na.rm = TRUE), 
+         avg_births = mean(`Number of Births`, na.rm = TRUE))
+
 # Join maternal health outcomes by state abbreviation 
 state_facility_maternal_sf <- state_facilities_sf %>% 
-  left_join(state_maternalhealth_avgs, by = c("STUSPS" = "State"))
+  left_join(state_maternalhealth_avgs, by = c("STUSPS" = "State")) 
  
 hist(chemfacilities_states$count, breaks = 50)
-
-# Create interactive leaflet map
-
-
  
 ```
-
-## Visualization 2: Scatterplot
-
-_Describe what this plot shows, and why it's important._
 
 ```{r}
 # Aggregate number of chemical production facilities by state
@@ -368,15 +373,6 @@ all50_state_facilities <- all_50 %>%
 all50_state_facilities$count[is.na(all50_state_facilities$count)] <- 0 # Replace NA values with 0 in case we want to explore this in the scatterplot
 
 sum(all50_state_facilities$count) # = 607; 3 facilities now missing, because 3 facilities were in Puerto Rico which we will exclude from our analysis (?)
-
-# Create columns containing state averages grouped by state and year
-state_maternalhealth_avgs <- State_Maternal_Outcome_Data %>% 
-  group_by(Year, State) %>% 
-  mutate(avg_cesarean = mean(`Cesarean Deliveries Percent`, na.rm = TRUE),
-         avg_lbw = mean(`LBW Percent`, na.rm = TRUE),
-         avg_fertility = mean(`Fertility Rate`, na.rm = TRUE), 
-         avg_preterm = mean(`Preterm Births Percent`, na.rm = TRUE), 
-         avg_births = mean(`Number of Births`, na.rm = TRUE))
 
 # Create new df with just 2023 rates for all 50 states, for scatterplot; and join facility counts
 mhcf_2023_scatterdf <- state_maternalhealth_avgs %>% 
@@ -408,29 +404,22 @@ mhcf_scatterplot <- mhcf_2023_scatterdf %>% # mh = maternal health, cf = chemica
   theme_minimal()
 mhcf_scatterplot
 
-
 # Notes: for Shiny, we can alter title label and y axis label to reflect which outcome is selected for
 
 ```
 
-## Visualization 3: Line Graph
-
-_Describe what this plot shows, and why it's important._
-
 ```{r}
 # your code here
-mhcf_2023_scatterdf # Use this for plotting
+# mhcf_2023_scatterdf # Use this for plotting
 
-
-
--------
 # your code below 
-state_data_2014_2024 # Use this for plotting
- view(state_data_2014_2024)
- view(all50_state_facilities)
+# state_data_2014_2024 # Use this for plotting
+# view(state_data_2014_2024)
+# view(all50_state_facilities)
  
 # creating national averages for each maternal health outcome 
-  ntl_maternal_avgs <- state_data_2014_2024 %>%
+  
+ntl_maternal_avgs <- state_data_2014_2024 %>%
   filter(State != "District of Columbia") %>%   #filter out DC
   group_by(Year) %>%
     summarise(
@@ -440,34 +429,40 @@ state_data_2014_2024 # Use this for plotting
     ntl_preterm = mean(`Preterm Birth Percent`, na.rm = TRUE),
     .groups = "drop"
   )
+
   view(ntl_maternal_avgs)       
-        
         
 ```
 
-## OR Shiny app: Plastic Chemical Production Facilities and Maternal Health in the US
+## Shiny App: Plastic Chemical Facilities and Maternal Health Explorer
 
-_If you choose to create a Shiny app, describe the app's purpose and functionality. Save your code inside the shiny-app/ folder, replace the URL below with your app's URL_
+The Plastic Chemical Facilities and Maternal Health Explorer is an interactive dashboard that investigates the relationship between chemical facilities and maternal health. Users can select for a single maternal health outcome at a time (fertility rate, preterm birth, cesarean deliveries, or low birth weight), which then produces three visualizations for exploration. To contextualize maternal health in the US, the line graph first describes trends over time, and compares state-level maternal health data to the national average. Next, the scatterplot shows the relationship between the frequency of facilities and maternal health by state. Lastly, the map provides an interactive visualization of the geographic relationship between chemical facilities and maternal health.
 
-[Click here to open the interactive Shiny app](https://cindyhu.shinyapps.io/two-files-app/)
+[Click here to open the interactive Shiny app](https://n4s5zp-megan-liu.shinyapps.io/shiny-app/)
 
 ## Interpretation
 
-_Summarize your key findings. What do your visualizations reveal?_
+Key findings from the visualizations revealed state variation in both maternal health outcomes and the presence of chemical facilities. The line graph showed that while national maternal health trends remained relatively stable over time, individual states often deviated from the national average. Comparisons with the national average identified states that consistently performed above or below national trends across the time series. 
+
+States with higher counts of chemical facilities often appeared to have higher rates of adverse maternal health outcomes, but this pattern was not consistent across the US. Texas had the highest number of chemical facilities (182), and Louisiana had the second highest (114), with Louisiana consistently standing out with both a high amount of facilities and worse maternal health outcomes. Higher rates of adverse maternal health outcomes were commonly observed in central and southern states, across varying levels of chemical facility counts. These visualizations highlight states that experience compounded impacts of disproportionate exposure to chemical production facilities and adverse maternal health outcomes, which can help identify areas for further research, policy, and public health interventions.  
 
 ## Limitations
 
-_Discuss any data quality or design limitations._
+This project had a few limitations. The visualizations compared state-level data which was useful for higher level comparisons, but does not allow for a more granular analysis. County-level maternal health data would have provided more specific, community-level insights, however comprehensive maternal health outcome data was not available at the county-level. 
+
+The chemical facility data was also limited to a small amount of plastic production chemicals, rather than a comprehensive list of the thousands of chemicals involved in plastic production. It is likely that there are many other plastic chemical facilities that were not included in this exploration. A more in-depth literature review could result in a more comprehensive list of plastic chemical facilities being included in the analysis.
+
+Overall, this dashboard was an exploratory analysis, so was able to identify states with higher counts of plastic chemical facilities and adverse maternal health rates, but did not establish association. With additional time and stronger data, future work could incorporate county-level geographical visualizations with a more comprehensive list of chemicals and facilities, as well as perform statistical association tests. 
 
 ## Conclusion
 
-_Wrap up your project with a takeaway message or next steps._
+This investigation aims to provide users, especially public health stakeholders and policymakers, with an understanding of maternal health status in the US, and whether the presence of plastic chemical production facilities in communities has any connection to adverse maternal health outcomes. By comparing state trends to national averages over time, and identifying states that have greater exposures to plastic pollution and worse maternal health outcomes, users can easily identify areas that may be disproportionately impacted. 
 
 ## References
 
-_Include any references to data sources, packages, or literature you used. If your visualization design is inspired by someone else's work, cite those too._
-
-1. Reference 1
-2. Reference 2
-3. Reference 3
-
+1. Munira Gunja et al., Insights into the U.S. Maternal Mortality Crisis: An International Comparison (Commonwealth Fund, June 2024). https://doi.org/10.26099/cthn-st75 
+2. Hailu, E. M., Maddali, S. R., Snowden, J. M., Carmichael, S. L., & Mujahid, M. S. (2022). Structural racism and adverse maternal health outcomes: A systematic review. Health & place, 78, 102923. https://doi.org/10.1016/j.healthplace.2022.102923 
+3. Qian, Y., Shao, H., Ying, X., Huang, W., & Hua, Y. (2020). The endocrine disruption of prenatal phthalate exposure in mother and offspring. Frontiers in Public Health, 8, 366. https://doi.org/10.3389/fpubh.2020.00366
+4. Juhasz, A. (2026). “We’re dying here.” In Human Rights Watch. https://www.hrw.org/report/2024/01/25/were-dying-here/the-fight-for-life-in-a-louisiana-fossil-fuel-sacrifice-zone#5194
+5. NVSS - National Vital Statistics System Homepage. (n.d.). https://www.cdc.gov/nchs/nvss/index.htm
+6. Access CDR Data | US EPA. (2026, May 19). US EPA. https://www.epa.gov/chemical-data-reporting/access-cdr-data
