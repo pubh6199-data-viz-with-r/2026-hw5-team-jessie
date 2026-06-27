@@ -27,7 +27,7 @@ Note: we don't have the final write-up website; but in case it needs to be named
 ├── 5-final.qmd          # Final report source file
 ├── data/                # Contains maternal health and chemical facility datasets
 ├── docs/                # Rendered Quarto website; contains the final report html, "5-final.html"
-├── index.qmd            # Old qmd file where we did initial coding; we moved and saved our final write up in the 5-final.qmd file 
+├── index.qmd            # Our final write up is stored in the 5-final.qmd file; but we did do our data cleaning and wrangling in the index.qmd code chunks. We didn't have time as of Friday night 6/26 to transfer the code into the app.R file, so that app.R had all the code used for the app; but how we did code, with the code in the index.qmd file and the app.R file having our UI and server code did allow us to successfully create and deploy the app.
 ├── shiny-app/
 │   ├── app-data/        # Data used by the dashboard (our maternal health and facility data, saved as rds files)
 │   ├── app.R            # Interactive Shiny dashboard code
