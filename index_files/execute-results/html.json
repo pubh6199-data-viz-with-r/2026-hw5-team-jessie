@@ -1,0 +1,15 @@
+{
+  "hash": "de2bf24f64e953dff1d0c0a33cd44b2c",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Final Project: Plastic Production Chemicals and Maternal Health Outcomes\"\nauthor: \"Salem Yohannes , Megan Liu\"\ndate: \"2026-06-25\"\nparams:\n  number: 5\n  purpose: \"Final project for PUBH 6199: Visualizing Data with R\"\nformat: \n  html:\n    toc: true\n    toc-location: right\n    code-fold: true\n    theme: flatly\n    self-contained: true\nexecute:\n  echo: true\n  warning: false\n  message: false\noutput-dir: docs\n---\n\n\n\n\n## Introduction\n\n_Briefly introduce your topic and research question._\n\n## Data\n\n_Describe your data source(s), including where it came from, the key variables, and any pre-processing steps._\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Load libraries and data\nlibrary(tidyverse)\n\n# Load EPA Chemical Data Reporting (CDR) Data\ncdr <- X2024_CDR_Manufacture_Import_Information\nglimpse(cdr)\n\n# Check how many rows of data\nnrow(cdr) ## 50116 rows\n\n# Drop CBI facilities\ncdr <- cdr[cdr$`SITE NAICS ACTIVITY 1` != \"CBI\",]\n\n# Check how many rows of data\nnrow(cdr) ## 43042, so dropped 7074 rows \n\n# Keep only manufacturing or \"both\" facilities; drop importing\ncdr <- cdr[cdr$`SITE NAICS ACTIVITY 1` != \"Import\",]\n\n# Check how many rows of data\nnrow(cdr) ## 29559, so dropped another 13483 rows; in total, 20557 dropped \n\n#Load additional data below\n```\n:::\n\n\n## Visualizatiob 1: [Title Here]\n\n_Describe what this plot shows, and why it's important._\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# your code here\n```\n:::\n\n\n## Visualization 2: [Title Here]\n\n_Describe what this plot shows, and why it's important._\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# your code here\n```\n:::\n\n\n## Visualization 3: [Title Here]\n\n_Describe what this plot shows, and why it's important._\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# your code here\n```\n:::\n\n\n## OR Shiny app: [Title Here]\n\n_If you choose to create a Shiny app, describe the app's purpose and functionality. Save your code inside the shiny-app/ folder, replace the URL below with your app's URL_\n\n[Click here to open the interactive Shiny app](https://cindyhu.shinyapps.io/two-files-app/)\n\n## Interpretation\n\n_Summarize your key findings. What do your visualizations reveal?_\n\n## Limitations\n\n_Discuss any data quality or design limitations._\n\n## Conclusion\n\n_Wrap up your project with a takeaway message or next steps._\n\n## References\n\n_Include any references to data sources, packages, or literature you used. If your visualization design is inspired by someone else's work, cite those too._\n\n1. Reference 1\n2. Reference 2\n3. Reference 3\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
