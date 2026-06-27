@@ -3,6 +3,8 @@ title: "Final Project: Plastic Chemical Facilities and Maternal Health Explorer"
 author: "Salem Yohannes and Megan Liu"
 date: "2026-06-25"
 
+#runtime: shiny 
+
 params:
   number: 5
   purpose: "Final project for PUBH 6199: Visualizing Data with R"

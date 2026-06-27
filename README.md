@@ -14,6 +14,8 @@ This project explores the relationship between plastic production chemical facil
 The final write-up, including code and interpretation of the visualizations, is available here:
 
 👉 [**View the write-up website**](https://pubh6199-data-viz-with-r.github.io/hw5-YOUR-TEAM-NAME/)
+
+Note: we don't have the final write-up website; but in case it needs to be named under our project name, here's an example:
 (https://pubh6199-data-viz-with-r.github.io/2026-hw5-team-jessie/)
 
 ## 📂 Repository Structure
@@ -22,14 +24,13 @@ The final write-up, including code and interpretation of the visualizations, is 
 .
 ├── _quarto.yml          # Quarto website configuration
 ├── .gitignore           # Git ignore file
-├── data/                # Cleaned maternal health and chemical facility datasets
-├── docs/                # Rendered Quarto website
-├── images/              # Figures used in the write-up (if applicable)
-├── index.qmd            # Main Quarto write-up
-├── references.bib       # Bibliography
+├── 5-final.qmd          # Final report source file
+├── data/                # Contains maternal health and chemical facility datasets
+├── docs/                # Rendered Quarto website; contains the final report html, "5-final.html"
+├── index.qmd            # Old qmd file where we did initial coding; we moved and saved our final write up in the 5-final.qmd file 
 ├── shiny-app/
-│   ├── app.R            # Interactive Shiny dashboard
-│   ├── app-data/        # Data used by the dashboard
+│   ├── app-data/        # Data used by the dashboard (our maternal health and facility data, saved as rds files)
+│   ├── app.R            # Interactive Shiny dashboard code
 │   └── www/             # Static assets (images, CSS, etc.)
 ├── scratch/             # Exploratory analyses and development files
 └── README.md            # Project overview and instructions
@@ -79,4 +80,4 @@ If your project includes a Shiny app, you can access it here:
 
 ## ✅ To-Do or Known Issues
 
-[Optional section for you to note improvements or bugs.]
+N/A

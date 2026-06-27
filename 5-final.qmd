@@ -3,8 +3,18 @@ title: "Final Project: Plastic Chemical Facilities and Maternal Health Explorer"
 author: "Salem Yohannes and Megan Liu"
 date: "2026-06-25"
 
-format: html
-editor: visual
+format: 
+  html:
+    toc: true
+    toc-location: right
+    code-fold: true
+    theme: sandstone
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+output-dir: docs
 ---
 
 ## Introduction
